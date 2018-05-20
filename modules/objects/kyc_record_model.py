@@ -10,17 +10,17 @@ class KycRecordModel (object):
         'INREVIEW': 'inreview',
         'APPROVED': 'approved'
     }
-    BLOCKPASS_STATUS_DEFAULT = [
-        {
+    BLOCKPASS_STATUS_DEFAULT = {
+        'identities': [{
             'slug': 'email',
             'status': ''
         },
-        {
+            {
             'slug': 'selfie',
             'status': ''
-        }
-    ]
-
+        }]
+    }
+        
     def __init__(self):
         self.id = str(KycRecordModel.UDID)
         self.bpId = None
@@ -46,6 +46,18 @@ class KycRecordModel (object):
                 'status': 'received' if self.selfie != None else 'missing'
             }
         ]
+
+    def generateCertificateStatus(self):
+        return [
+            {
+                'slug': 'onfido',
+                'status': 'received' if self.onfido != None else 'missing'
+            }
+        ]
+        
+
+    def isFullfillRecord(self):
+        return self.email != None and self.selfie != None
 
     def toJson(self):
         return json.dumps({

@@ -9,7 +9,7 @@ from modules.objects.kyc_record_model import KycRecordModel
 LOGGER = get_logger()
 
 class BlockpassHandler (object):
-
+  
   @staticmethod
   def status(endpoint):
     try:
@@ -34,17 +34,18 @@ class BlockpassHandler (object):
       if record == None:
         # New User
         message = {
-            'nextAction': 'login',
             'status': KycRecordModel.BLOCKPASS_RECORD_STATUS['NOT_FOUND'],
-            'identities': KycRecordModel.BLOCKPASS_STATUS_DEFAULT
+            'identities': KycRecordModel.BLOCKPASS_STATUS_DEFAULT['identities'],
+            'certificates': []
         }
         return jsonify(message)
       else:  
-        # Existing user
+        # Old user
         message = {
             'nextAction': 'none',
             'status': KycRecordModel.BLOCKPASS_RECORD_STATUS['APPROVED'],
-            'identities': record.generateProfileStatus()
+            'identities': record.generateProfileStatus(),
+            'certificates': record.generateCertificateStatus()
         }
 
         # Notify to Web-page
@@ -58,6 +59,8 @@ class BlockpassHandler (object):
     except Exception as exception:
       return handle_error(endpoint=endpoint, e=exception)
 
+
+  #------------------------------------------------------------
   @staticmethod
   def create_record(endpoint):
     try:
@@ -76,14 +79,19 @@ class BlockpassHandler (object):
       if bpId == None:
           return jsonify({'err': 500, 'msg': 'basic_auth_failed'}), 500
       
-      # -- Safe-guard
+      # -- Check old record has any missing fields.
+      #     - Missing fields => request upload data again
+      #     - No => return action 'none'
       record = KycRecordModel.find_record_by_blockpassId(bpId)
-      if record != None:
-          return jsonify({'err': 409, 'msg': 'conflict'}), 409
-
-      # Step 3: Create new record to store user data & one_time_pass to upload data
-      record = KycRecordModel()
-      record.bpId = bpId
+      if record != None and record.isFullfillRecord():
+          return jsonify({
+              'nextAction': 'none',
+          })
+    
+      # Step 3: Create new record to store user data
+      if record == None:
+        record = KycRecordModel()
+        record.bpId = bpId
 
       # store this for further query if need
       record.bpToken = bp_user_access_token
@@ -94,7 +102,10 @@ class BlockpassHandler (object):
       # save record
       record.save()
 
+      # one_time_pass to upload data
       one_time_pass = 'ugrly-pass-for-record:' + str(record.id)
+
+      # request mobile app upload data 
       return jsonify({
           'nextAction': 'upload',
           'accessToken': one_time_pass,
@@ -104,11 +115,11 @@ class BlockpassHandler (object):
 
     except Exception as exception:
       return handle_error(endpoint=endpoint, e=exception)
-
+  
+  #------------------------------------------------------------
   @staticmethod
   def upload(endpoint):
     try:
-      
       # Step 0: Parse Mobile Client payload (application/json)
       fields = request.form
       files = request.files
@@ -150,6 +161,7 @@ class BlockpassHandler (object):
     except Exception as exception:
       return handle_error(endpoint=endpoint, e=exception)
 
+  #------------------------------------------------------------
   @staticmethod
   def basicAuth(mobileRequestPayload):
       # Step 1: HandShake ensure that it is trusted client
@@ -178,8 +190,11 @@ class BlockpassHandler (object):
       bpId = bpProfileResponse['id']
       return bpId, bp_user_access_token
 
+  #------------------------------------------------------------
   @staticmethod
   def ssoComplete(bp_user_access_token, session_code, record):
+
+      # Implement logic for token generated here
       my_service_access_token = 'i am here for id ->' + record.id
       BlockpassApi.ssoComplete(
           bp_user_access_token, session_code, my_service_access_token)

@@ -1,10 +1,10 @@
-# Blockpass Basic server
+# Blockpass AuthBackend Service
 
 This repo implement basic features of Blockpass [Server Spec V1](https://github.com/blockpass-org/blockpass/wiki/Server_Spec_V1)
 
 ## Use Cases
 
-1. User Using Blockpass Mobile app (V1.2+) to scan QR code from website
+1. User Using Blockpass Mobile app (V1.1+) to scan QR code from website
 
 2. Server side handle logic
 
@@ -12,7 +12,7 @@ This repo implement basic features of Blockpass [Server Spec V1](https://github.
 
 - **New user** create new record -> generate `one_time_pass` inside api `/login` and request Mobile App upload data via `/uploadData` endpoints
 
-Example website can be found [/example-web](/example-web)
+Example website (for QR Code scanning) can be found [/example-web](/example-web)
 
 ## Pre-configuration
 
