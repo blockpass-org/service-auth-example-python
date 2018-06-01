@@ -48,12 +48,14 @@ class KycRecordModel (object):
         ]
 
     def generateCertificateStatus(self):
-        return [
-            {
-                'slug': 'onfido',
-                'status': 'received' if self.onfido != None else 'missing'
-            }
-        ]
+        if self.onfido != None:
+            return [
+                {
+                    'slug': 'onfido'
+                }
+            ]
+        else:
+            return []
         
 
     def isFullfillRecord(self):
