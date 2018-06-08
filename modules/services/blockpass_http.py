@@ -41,6 +41,40 @@ class BlockpassApi (object):
         return bpProfileResponse
 
     @staticmethod
+    def refreshBlockpassToken(user_access_token, refresh_token, client_secret):
+        bp_url = Config.BP_URL
+
+        endpoint = bp_url + '/api/v0.3/service/renewStoc'
+        LOGGER.info(['BlockpassApi', endpoint])
+
+        bpNewTokenResponse = requests.post(endpoint, json={
+            stoc: user_access_token,
+            stoc_refresh: refresh_token,
+            client_secret: client_secret
+        })
+
+        return bpNewTokenResponse
+
+    @staticmethod
+    def sendPN(user_access_token, title, message):
+        bp_url = Config.BP_URL
+
+        endpoint = bp_url + '/api/v0.3/certificate_new/feedBack'
+        LOGGER.info(['BlockpassApi', endpoint])
+
+        bpPnResponse = requests.post(endpoint, headers = {
+            'Authorization': user_access_token
+        }, json={
+            noti: {
+                type: 'info',
+                title: title,
+                mssg: message
+            }
+        })
+
+        return bpPnResponse
+
+    @staticmethod
     def ssoComplete(user_access_token, session_code, your_service_accessControl):
         bp_url = Config.BP_URL
 
