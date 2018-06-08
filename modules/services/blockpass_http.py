@@ -65,10 +65,10 @@ class BlockpassApi (object):
         bpPnResponse = requests.post(endpoint, headers = {
             'Authorization': user_access_token
         }, json={
-            noti: {
-                type: 'info',
-                title: title,
-                mssg: message
+            'noti': {
+                'type': 'info',
+                'title': title,
+                'mssg': message
             }
         })
 
