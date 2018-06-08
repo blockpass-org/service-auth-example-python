@@ -1,5 +1,5 @@
 import json
-
+import datetime
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from modules.utils.logger import get_logger
 from modules.handlers.error_handler import handle_error
@@ -74,7 +74,7 @@ class BlockpassHandler (object):
       LOGGER.info(['mobileRequestPayload', mobileRequestPayload])
 
       # Basic Auth
-      bpId, bp_user_access_token = BlockpassHandler.basicAuth(
+      bpId, bp_user_access_token, bp_user_refresh_token, bp_user_access_token_expires_in = BlockpassHandler.basicAuth(
           mobileRequestPayload)
       if bpId == None:
           return jsonify({'err': 500, 'msg': 'basic_auth_failed'}), 500
@@ -95,6 +95,11 @@ class BlockpassHandler (object):
 
       # store this for further query if need
       record.bpToken = bp_user_access_token
+      record.bpRefreshToken = bp_user_refresh_token
+
+      # time token expired at
+      now = datetime.datetime.now()
+      record.bpExpiredAt = now + datetime.timedelta(milliseconds = bp_user_access_token_expires_in)
       
       # temporary data. Which using later on after user complete upload data
       record.session_code = mobileRequestPayload.get('sessionCode')
@@ -103,7 +108,7 @@ class BlockpassHandler (object):
       record.save()
 
       # one_time_pass to upload data
-      one_time_pass = 'ugrly-pass-for-record:' + str(record.id)
+      one_time_pass = 'ugly-pass-for-record:' + str(record.id)
 
       # request mobile app upload data 
       return jsonify({
@@ -128,6 +133,8 @@ class BlockpassHandler (object):
       email = fields.get('email')
       selfie = files.get('selfie')
       onfido = fields.get('[cer]onfido')
+      onfido_service_cert = fields.get('[cer]onfido-service-cert')
+      complyadvantage_service_cert = fields.get('[cer]complyadvantage-service-cert')
 
       LOGGER.info(['mobileRequestPayload', fields, files])
 
@@ -177,6 +184,8 @@ class BlockpassHandler (object):
 
       handShakeResponse = json.loads(handShakeResponse.text)
       bp_user_access_token = handShakeResponse['access_token']
+      bp_user_refresh_token = handShakeResponse['refresh_token']
+      bp_user_access_token_expires_in = handShakeResponse['expires_in']
 
       # Step 2: Query Blockpass profile (contain BpId)
       bpProfileResponse = BlockpassApi.queryBlockpassProfile(
@@ -188,7 +197,7 @@ class BlockpassHandler (object):
 
       bpProfileResponse = json.loads(bpProfileResponse.text)
       bpId = bpProfileResponse['id']
-      return bpId, bp_user_access_token
+      return bpId, bp_user_access_token, bp_user_refresh_token, bp_user_access_token_expires_in
 
   #------------------------------------------------------------
   @staticmethod

@@ -28,6 +28,8 @@ class KycRecordModel (object):
         self.email = None
         self.selfie = None
         self.onfido = None
+        self.onfido_service_cert = None
+        self.complyadvantage_service_cert = None
 
         KycRecordModel.UDID = KycRecordModel.UDID + 1
 
@@ -48,14 +50,24 @@ class KycRecordModel (object):
         ]
 
     def generateCertificateStatus(self):
+        res = []
+
         if self.onfido != None:
-            return [
-                {
+            res.append({
                     'slug': 'onfido'
-                }
-            ]
-        else:
-            return []
+            })
+        
+        if self.onfido_service_cert != None:
+            res.append({
+                    'slug': 'onfido-service-cert'
+            })
+
+        if self.complyadvantage_service_cert != None:
+            res.append({
+                    'slug': 'complyadvantage-service-cert'
+            })
+        
+        return res
         
 
     def isFullfillRecord(self):
@@ -67,7 +79,9 @@ class KycRecordModel (object):
             'bpId': self.bpId,
             'email': self.email,
             'selfie': str(self.selfie),
-            'onfido': str(self.onfido)
+            'onfido': str(self.onfido),
+            'onfido-service-cert': str(self.onfido_service_cert),
+            'complyadvantage-service-cert': str(self.complyadvantage_service_cert),
         })
 
     @staticmethod
@@ -88,4 +102,4 @@ class KycRecordModel (object):
 
     @staticmethod
     def niceToHaveCertificates():
-        return ['onfido']
+        return ['onfido', 'onfido-service-cert', 'complyadvantage-service-cert']
